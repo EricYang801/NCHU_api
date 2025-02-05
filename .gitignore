@@ -12,3 +12,6 @@ __pycache__/
 
 # 下載圖片
 captcha.png
+
+# 忽略環境文件
+.env

@@ -1,6 +1,5 @@
 import requests
 from bs4 import BeautifulSoup
-import os  # 添加這個導入
 
 class NCHULMSLogin:
     def __init__(self):
@@ -88,22 +87,22 @@ class NCHULMSLogin:
                 "message": f"解析回應失敗: {str(e)}"
             }
 
-    # def get_dashboard_content(self):
-    #     """爬取儀表板內容"""
-    #     response = self.session.get(
-    #         f"{self.base_url}/dashboard",
-    #         headers=self.headers
-    #     )
-    #
-    #     # 印出response
-    #     if response.status_code == 200:
-    #         soup = BeautifulSoup(response.text, 'html.parser')
-    #         # 這裡可以根據需要解析具體內容
-    #         # 例如獲取所有課程列表
-    #         courses = soup.find_all('div', class_='course-item')
-    #         # 暫時不要print出來
-    #         # return response.text  # 或返回解析後的具體內容
-    #     return None
+    def get_dashboard_content(self):
+        """爬取儀表板內容"""
+        response = self.session.get(
+            f"{self.base_url}/dashboard",
+            headers=self.headers
+        )
+    
+        # 印出response
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            # 這裡可以根據需要解析具體內容
+            # 例如獲取所有課程列表
+            courses = soup.find_all('div', class_='course-item')
+            # 暫時不要print出來
+            # return response.text  # 或返回解析後的具體內容
+        return None
 
 if __name__ == "__main__":
     print("test")
