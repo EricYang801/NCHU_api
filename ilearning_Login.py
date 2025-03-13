@@ -1,5 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
+import json
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+# 設定登入憑證
+USER_ID = os.getenv("USER_ID", "USER_ID")
+PASSWORD = os.getenv("PASSWORD", "PASSWORD")
 
 class NCHULMSLogin:
     def __init__(self):
@@ -87,22 +95,51 @@ class NCHULMSLogin:
                 "message": f"解析回應失敗: {str(e)}"
             }
 
-    def get_dashboard_content(self):
-        """爬取儀表板內容"""
+    def get_dashboard_lastEvent(self):
+        """爬取最新事件內容並返回 JSON 格式"""
         response = self.session.get(
-            f"{self.base_url}/dashboard",
+            f"{self.base_url}/dashboard/latestEvent",
             headers=self.headers
         )
-    
-        # 印出response
+
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
-            # 這裡可以根據需要解析具體內容
-            # 例如獲取所有課程列表
-            courses = soup.find_all('div', class_='course-item')
-            # 暫時不要print出來
-            # return response.text  # 或返回解析後的具體內容
-        return None
+            table = soup.find('table', id='recentEventTable')
+            
+            if table:
+                events = []
+                rows = table.find('tbody').find_all('tr')
+                
+                for row in rows:
+                    cols = row.find_all('td')
+                    if len(cols) == 3:  # 確保有三列（標題、來源、期限）
+                        title_link = cols[0].find('a')
+                        source_link = cols[1].find('a')
+                        deadline = cols[2].find('div', class_='text-overflow')
+                        
+                        event = {
+                            'title': title_link.find('span', class_='text').text.strip() if title_link else '',
+                            'title_link': self.base_url + title_link['href'] if title_link else '',
+                            'source': source_link.find('span', class_='text').text.strip() if source_link else '',
+                            'source_link': self.base_url + source_link['href'] if source_link else '',
+                            'deadline': deadline['title'] if deadline and 'title' in deadline.attrs else deadline.text.strip() if deadline else ''
+                        }
+                        events.append(event)
+                
+                return json.dumps({
+                    "success": True,
+                    "data": events
+                }, ensure_ascii=False)
+            
+            return json.dumps({
+                "success": False,
+                "message": "找不到事件表格"
+            }, ensure_ascii=False)
+        
+        return json.dumps({
+            "success": False,
+            "message": f"請求失敗: {response.status_code}"
+        }, ensure_ascii=False)
 
 if __name__ == "__main__":
-    print("test")
+    print("ilearning_login.py is running")

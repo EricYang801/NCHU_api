@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from ilearning_login import NCHULMSLogin
 import uvicorn
 import logging
+import json
 
 # 設置日誌
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +18,7 @@ class LoginRequest(BaseModel):
 @app.post("/login")
 async def login(request: LoginRequest):
     """
-    登入NCHU LMS系統
+    登入NCHU LMS系統並獲取最新事件
     
     參數:
     - account: 學號
@@ -27,6 +28,7 @@ async def login(request: LoginRequest):
     - success: 是否成功
     - message: 訊息
     - phpsessid: 如果成功，返回session ID
+    - events: 如果成功，返回最新事件列表
     """
     try:
         logger.info(f"收到登入請求: {request.account}")
@@ -37,8 +39,17 @@ async def login(request: LoginRequest):
             logger.error(f"登入失敗: {result['message']}")
             raise HTTPException(status_code=401, detail=result["message"])
         
-        logger.info("登入成功")
+        # 登入成功後獲取事件
+        events = lms.get_dashboard_lastEvent()
+        if events["success"]:
+            result["events"] = events["data"]  # 將事件資料加入到返回結果中
+        else:
+            logger.warning(f"獲取事件失敗: {events['message']}")
+            result["events"] = []  # 如果獲取事件失敗，返回空列表
+        
+        logger.info("登入成功並獲取事件")
         return result
+        
     except Exception as e:
         logger.error(f"處理登入請求時發生錯誤: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
